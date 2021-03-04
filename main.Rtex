@@ -1,0 +1,203 @@
+
+%%%%% Enter the initial amount each player receives (equ) and the percentage share (a number between zero and 100) each player will give up (give share). The number of players is determined by the number of values you enter. For example, if you write equ <- c(5000,15000,5000,15000) you tell latex to construct the graphic with 4 players.
+
+%%% Technical note. The vectors are recycled. If you enter 4 values for the endowment and only 1 value for the share, the program will assume that all players give up the first share. If you enter two values for share, the first and third player will share the first value in giveshare, and the second and fourth players will share the second value.
+
+<<echo=FALSE, include=FALSE>>=
+equ <- c(1000,1000,1000,1000) #initial endowment
+giveshare <- c(50,0,0,0) #share in percent that is contributed to the group account
+@ 
+
+%If you want to use a different pictogram for the players, save it in the pics folder and enter the name in the line below
+\newcommand{\myfarmer}{pics/farmer_b.eps}%choose the farmer pic
+
+%To change the currency symbol, enter it in the line below. For the Euro sign, use \euro{}
+\newcommand*{\cur}{Ft }% insert here the sign for the currency. For Euro use \euro{}
+
+
+
+\documentclass[border=1.5in]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{xparse}
+\usepackage{ifthen}
+\usepackage{tikz}
+\usepackage[official]{eurosym}
+\usetikzlibrary{arrows,positioning,calc, backgrounds} 
+
+
+
+%% The following lines make a new function that allows to access elements of a list
+\ExplSyntaxOn
+\NewExpandableDocumentCommand{\GetListMember}{smm}
+ {
+  \IfBooleanTF{#1}
+   {% * means control sequence
+    \clist_item:Nn #2 { #3 }
+   }
+   {
+    \clist_item:nn { #2 } { #3 }
+   }
+ }
+\ExplSyntaxOff
+
+
+
+\title{Public Good Game graph}
+
+\author{Qri\$\$ \and ChoiceOne}
+\date{March 2021}
+
+\begin{document}
+
+\tikzset{%
+  /pgf/number format/.cd,
+    fixed, precision=1,
+}
+
+%%%%%%%%% Begin new function to create graphs with more than 8 players %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%this following R sets the initial endowments and the shares given
+<<echo=FALSE,  include=FALSE>>=
+x<- equ*giveshare/100 ## amount that is contributed
+
+y<- equ-x
+
+totalcontr<-sum(x)
+double<-totalcontr*2
+
+
+indpayoff<- rep(double/length(equ),length(equ)) 
+
+equ
+giveshare
+x
+y
+totalcontr
+double
+indpayoff
+@ 
+
+%%%% Define functions that are used in the main function
+
+
+\pgfmathsetmacro\n{\Sexpr{length(equ)}}% Macro defining the number of players
+
+\newcommand*{\equ}{\Sexpr{format(equ,big.mark = ".", decimal.mark = ",")}}%this is the endowment
+\newcommand*{\x}{\Sexpr{format(x, big.mark = ".", decimal.mark = ",")}}%this is the amount contributed
+\newcommand*{\y}{\Sexpr{format(y,big.mark = ".", decimal.mark = ",")}}%this is the amount kept
+\newcommand*{\indpayoff}{\Sexpr{format(indpayoff, big.mark = ".", decimal.mark = ",")}}%this is the amount received from the group account
+\newcommand*{\totalcontr}{\Sexpr{format(totalcontr,big.mark = ".", decimal.mark = ",")}}%this is the total contribution
+\newcommand*{\double}{\Sexpr{format(double,big.mark = ".", decimal.mark = ",")}}%this is the total contribution
+
+%%% Make text describing the game in four steps 
+\newcommand{\ta}{\Large{\textbf{Step 1}} \\ Each player\\ receives money...}   %text for step 1 stored as function
+\newcommand{\tb}{\Large{\textbf{Step 2}} \\ ...and can contribute \\ to the group account}
+\newcommand{\tc}{\Large{\textbf{Step 3}} \\ The contributions\\ will be doubled}
+\newcommand{\td}{\Large{\textbf{Step 4}} \\ The total amount\\ will be equally distributed}
+\newcommand{\text}[1]{%used to format the text for the step description
+    node[black, align=center, above, yshift=4cm] {#1}
+}
+
+\newcommand{\farmers}{% This command makes the farmer graphics. It automatically adapts the number of farmers
+    \pgfmathsetmacro\r{\i*(360/\n)}
+    \node[align=center][xshift=\j*\wid*2cm] (farmpic_\i_\j) at (\r:1) {\includegraphics[width=.8cm]{\myfarmer}};
+}
+
+\newcommand{\greencircle}{%This command creates the green circles, relative to the first figure
+    \draw[green!70!red,nearly transparent,fill](\j*\wid,0) circle (\c/2); 
+}
+
+\pgfmathsetmacro\nhalf{\n/2}% Macro defining half the number of players. Used for placement of text below or above players
+\pgfmathsetmacro\c{1}%Macro defining the size of the hidden circle and subsequently the green circle
+\pgfmathsetmacro\wid{3.8}%Macro defining the width
+
+%%%% Begin with main command
+
+\newcommand{\moreplayers}[1]{% This is the main command. Options should be allowed
+
+\begin{tikzpicture}[scale=2] %Of course most of the code is inside the tikzpicture
+
+
+%Start loop over Steps 1 to 4. Begin with position of zero and step one more. For each step, read in the text for the step as defined in the commands /ta to /td. /j is a variable defining the steps one to four, /t is a variable defining the text to be used.
+    \foreach \j/\t in {0/\ta,1/\tb,2/\tc,3/\td} {% 
+        \pgfmathsetmacro\dist{(\j*\wid+1.7)}%defines a macro /dist that calculates the distance between the steps
+        \ifthenelse{\j<3}{\draw (\dist,-2) -- (\dist,2.9);}{}%draw vertical lines
+        \draw[white](\j*\wid,0) circle (\c) \text{\t}  ;
+        \ifthenelse{\j>0}%do not draw the circle in first step 
+            {\greencircle}
+            {} %else dont draw circle 
+            
+                 % select the background layer
+       
+    
+         \ifthenelse{\j=1}    
+            {\node[align = center]  (outcomes) at  (\j*\wid,0) {\cur\textcolor{blue}{\totalcontr} };}{}    
+        \ifthenelse{\j=2}    
+            {\node[align = center]  (outcomes2) at  (\j*\wid,0) {\cur\textcolor{blue}{\totalcontr}\\ $\downarrow$ \\ \cur\textcolor{blue}{\double}};}{}
+        \ifthenelse{\j=3}    
+            {\node[align = center]  (outcomes3) at  (\j*\wid,0) {\cur\textcolor{blue}{\double} };}{}
+       
+            
+            
+
+
+        \foreach \i in {1,...,\n} {%loop over farmers
+        
+        \farmers
+        %//j=0 is the first step. Here, we define the payment display. 
+          
+           
+          \ifthenelse{\j=1 \AND \GetListMember*{\x}{\i}>0}{ \draw [->] (farmpic_\i_\j) -- (outcomes);}{}  
+            
+           \ifthenelse{\j=3}{ \draw [<-] (farmpic_\i_\j) -- (outcomes3);}{} 
+           
+           
+            \ifthenelse{\i<\nhalf \AND \j=0}%defines position of money over each farmer. Can be below or above
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{red}{\GetListMember*{\equ}{\i}} };}{}%those are the farmers who get the money above their heads
+                
+                            \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=0}
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{red}{\GetListMember*{\equ}{\i}}  };}{}%those are the farmers who get the money below their heads
+                
+
+            
+            \ifthenelse{\i<\nhalf \AND \j=1}%defines position of money over each farmer. Can be below or above
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{blue}{\GetListMember*{\x}{\i}} };}{}%those are the farmers who get the money above their heads
+            \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=1}
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{blue}{\GetListMember*{\x}{\i}}  };}{}%those are the farmers who get the money below their heads
+       
+            
+           
+            \ifthenelse{\i<\nhalf \AND \j=3}%defines position of money over each farmer. Can be below or above
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{blue}{\GetListMember*{\indpayoff}{\i}} \\ \cur\textcolor{red}{\GetListMember*{\y}{\i}} };}{}%those are the farmers who get the money above their heads
+            \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=3}
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{blue}{\GetListMember*{\indpayoff}{\i}} \\ \cur\textcolor{red}{\GetListMember*{\y}{\i}}  };}{}%those are the farmers who get the money below their heads           
+
+
+
+
+                        
+            
+        } %end loop over farmer pics
+    } %end loop over steps
+
+\end{tikzpicture}
+}%end of main function
+
+\begin{minipage}{30cm}
+%\maketitle
+
+
+
+
+\moreplayers
+
+
+
+
+\end{minipage}
+
+
+
+
+\end{document}
