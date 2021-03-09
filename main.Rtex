@@ -1,18 +1,26 @@
+%NOTE: THE PICTURES INCLUDED IN THIS FILE ARE BORROWED FROM https://www.flaticon.com/authors/freepik
+
 
 %%%%% Enter the initial amount each player receives (equ) and the percentage share (a number between zero and 100) each player will give up (give share). The number of players is determined by the number of values you enter. For example, if you write equ <- c(5000,15000,5000,15000) you tell latex to construct the graphic with 4 players.
 
 %%% Technical note. The vectors are recycled. If you enter 4 values for the endowment and only 1 value for the share, the program will assume that all players give up the first share. If you enter two values for share, the first and third player will share the first value in giveshare, and the second and fourth players will share the second value.
 
+
+%The following is a R chunk that allows the user (you) to enter the endowments and shares. Calculations will be done later in another R chunk.
 <<echo=FALSE, include=FALSE>>=
-equ <- c(1000,1000,1000,1000) #initial endowment
-giveshare <- c(50,0,0,0) #share in percent that is contributed to the group account
+equ <- c(50,50,50,50) #initial endowment
+giveshare <- c(100,100,90,0) #share in percent that is contributed to the group account
+threshold <- 75 # A threshold in percent. If the total amount is below this threshold, all money is lost
+factor <-2 # by which factor will the contributed amount be multiplied (default is 2 i.e. double the amount)
+
+extension <- ifelse(threshold>0, "if threshold is reached", "") # additional text for threshold pgg
 @ 
 
-%If you want to use a different pictogram for the players, save it in the pics folder and enter the name in the line below
+%If you want to use a different pictogramm for the players, save it in the pics folder and enter the name in the line below
 \newcommand{\myfarmer}{pics/farmer_b.eps}%choose the farmer pic
 
 %To change the currency symbol, enter it in the line below. For the Euro sign, use \euro{}
-\newcommand*{\cur}{Ft }% insert here the sign for the currency. For Euro use \euro{}
+\newcommand*{\cur}{\euro{} }% insert here the sign for the currency. For Euro use \euro{}
 
 
 
@@ -42,12 +50,7 @@ giveshare <- c(50,0,0,0) #share in percent that is contributed to the group acco
 
 
 
-\title{Public Good Game graph}
 
-\author{Qri\$\$ \and ChoiceOne}
-\date{March 2021}
-
-\begin{document}
 
 \tikzset{%
   /pgf/number format/.cd,
@@ -63,8 +66,10 @@ x<- equ*giveshare/100 ## amount that is contributed
 
 y<- equ-x
 
-totalcontr<-sum(x)
-double<-totalcontr*2
+
+totalcontr <- sum(x)
+threstotalcontr<-ifelse(sum(x)<threshold/100*sum(equ),0,sum(x))
+double<-threstotalcontr*factor
 
 
 indpayoff<- rep(double/length(equ),length(equ)) 
@@ -92,9 +97,9 @@ indpayoff
 
 %%% Make text describing the game in four steps 
 \newcommand{\ta}{\Large{\textbf{Step 1}} \\ Each player\\ receives money...}   %text for step 1 stored as function
-\newcommand{\tb}{\Large{\textbf{Step 2}} \\ ...and can contribute \\ to the group account}
-\newcommand{\tc}{\Large{\textbf{Step 3}} \\ The contributions\\ will be doubled}
-\newcommand{\td}{\Large{\textbf{Step 4}} \\ The total amount\\ will be equally distributed}
+\newcommand{\tb}{\Large{\textbf{Step 2}} \\ ...and can contribute\\ to the group account}
+\newcommand{\tc}{\Large{\textbf{Step 3}} \\ The contributions will be\\ doubled \Sexpr{extension}}
+\newcommand{\td}{\Large{\textbf{Step 4}} \\ The total amount (if any)\\ will be equally distributed}
 \newcommand{\text}[1]{%used to format the text for the step description
     node[black, align=center, above, yshift=4cm] {#1}
 }
@@ -115,6 +120,14 @@ indpayoff
 %%%% Begin with main command
 
 \newcommand{\moreplayers}[1]{% This is the main command. Options should be allowed
+
+
+
+
+
+
+
+
 
 \begin{tikzpicture}[scale=2] %Of course most of the code is inside the tikzpicture
 
@@ -184,6 +197,15 @@ indpayoff
 \end{tikzpicture}
 }%end of main function
 
+
+
+
+
+
+
+
+\begin{document}
+
 \begin{minipage}{30cm}
 %\maketitle
 
@@ -194,6 +216,7 @@ indpayoff
 
 
 
+\moreplayers
 
 \end{minipage}
 
