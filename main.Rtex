@@ -7,24 +7,17 @@
 
 
 %The following is a R chunk that allows the user (you) to enter the endowments and shares. Calculations will be done later in another R chunk.
-<<echo=FALSE, include=FALSE>>=
-equ <- c(50,50,50,50) #initial endowment
-giveshare <- c(100,100,90,0) #share in percent that is contributed to the group account
-threshold <- 75 # A threshold in percent. If the total amount is below this threshold, all money is lost
-factor <-2 # by which factor will the contributed amount be multiplied (default is 2 i.e. double the amount)
 
-extension <- ifelse(threshold>0, "if threshold is reached", "") # additional text for threshold pgg
-@ 
 
 %If you want to use a different pictogramm for the players, save it in the pics folder and enter the name in the line below
 \newcommand{\myfarmer}{pics/farmer_b.eps}%choose the farmer pic
 
 %To change the currency symbol, enter it in the line below. For the Euro sign, use \euro{}
-\newcommand*{\cur}{\euro{} }% insert here the sign for the currency. For Euro use \euro{}
+\newcommand*{\cur}{\Sexpr{currency} }% insert here the sign for the currency. For Euro use \euro{}
 
 
 
-\documentclass[border=1.5in]{standalone}
+\documentclass[border=0.1in]{standalone}
 \usepackage[utf8]{inputenc}
 \usepackage{xparse}
 \usepackage{ifthen}
@@ -32,6 +25,8 @@ extension <- ifelse(threshold>0, "if threshold is reached", "") # additional tex
 \usepackage[official]{eurosym}
 \usetikzlibrary{arrows,positioning,calc, backgrounds} 
 
+\pgfdeclarelayer{bg}    % declare background layer
+\pgfsetlayers{bg,main}  % set the order of the layers (main is the standard layer)
 
 
 %% The following lines make a new function that allows to access elements of a list
@@ -61,52 +56,38 @@ extension <- ifelse(threshold>0, "if threshold is reached", "") # additional tex
 
 
 %this following R sets the initial endowments and the shares given
-<<echo=FALSE,  include=FALSE>>=
-x<- equ*giveshare/100 ## amount that is contributed
 
-y<- equ-x
-
-
-totalcontr <- sum(x)
-threstotalcontr<-ifelse(sum(x)<threshold/100*sum(equ),0,sum(x))
-double<-threstotalcontr*factor
-
-
-indpayoff<- rep(double/length(equ),length(equ)) 
-
-equ
-giveshare
-x
-y
-totalcontr
-double
-indpayoff
-@ 
 
 %%%% Define functions that are used in the main function
 
 
 \pgfmathsetmacro\n{\Sexpr{length(equ)}}% Macro defining the number of players
 
-\newcommand*{\equ}{\Sexpr{format(equ,big.mark = ".", decimal.mark = ",")}}%this is the endowment
-\newcommand*{\x}{\Sexpr{format(x, big.mark = ".", decimal.mark = ",")}}%this is the amount contributed
-\newcommand*{\y}{\Sexpr{format(y,big.mark = ".", decimal.mark = ",")}}%this is the amount kept
-\newcommand*{\indpayoff}{\Sexpr{format(indpayoff, big.mark = ".", decimal.mark = ",")}}%this is the amount received from the group account
-\newcommand*{\totalcontr}{\Sexpr{format(totalcontr,big.mark = ".", decimal.mark = ",")}}%this is the total contribution
-\newcommand*{\double}{\Sexpr{format(double,big.mark = ".", decimal.mark = ",")}}%this is the total contribution
+\newcommand*{\equ}{\Sexpr{format(equ,big.mark = "", decimal.mark = ".")}}%this is the endowment
+\newcommand*{\x}{\Sexpr{format(x, big.mark = "", decimal.mark = ".")}}%this is the amount contributed
+\newcommand*{\y}{\Sexpr{format(y,big.mark = "", decimal.mark = ".")}}%this is the amount kept
+\newcommand*{\indpayoff}{\Sexpr{format(indpayoff, big.mark = "", decimal.mark = ".")}}%this is the amount received from the group account
+\newcommand*{\totalcontr}{\Sexpr{format(totalcontr,big.mark = "", decimal.mark = ".")}}%this is the total contribution
+\newcommand*{\double}{\Sexpr{format(double,big.mark = "", decimal.mark = ".")}}%this is the total contribution
+\newcommand*{\ifcont}{\Sexpr{format(ifcont,big.mark = "", decimal.mark = ".")}}%this is an indicator if an amount has been contributed
 
 %%% Make text describing the game in four steps 
-\newcommand{\ta}{\Large{\textbf{Step 1}} \\ Each player\\ receives money...}   %text for step 1 stored as function
-\newcommand{\tb}{\Large{\textbf{Step 2}} \\ ...and can contribute\\ to the group account}
-\newcommand{\tc}{\Large{\textbf{Step 3}} \\ The contributions will be\\ doubled \Sexpr{extension}}
-\newcommand{\td}{\Large{\textbf{Step 4}} \\ The total amount (if any)\\ will be equally distributed}
+\newcommand{\ta}{\Large{\textbf{\Sexpr{Step[1]} }} \\ \Sexpr{texts[1]}  \\ \Sexpr{texts[2]}}   %text for step 1 stored as function
+\newcommand{\tb}{\Large{\textbf{\Sexpr{Step[2]} }} \\ \Sexpr{texts[3]}\\ \Sexpr{texts[4]}}
+\newcommand{\tc}{\Large{\textbf{\Sexpr{Step[3]} }} \\ \Sexpr{texts[5]} \Sexpr{factorname} \\ \Sexpr{extension}}
+\newcommand{\td}{\Large{\textbf{\Sexpr{Step[4]} }} \\ \Sexpr{texts[6]}\\ \Sexpr{texts[7]}}
 \newcommand{\text}[1]{%used to format the text for the step description
     node[black, align=center, above, yshift=4cm] {#1}
 }
 
 \newcommand{\farmers}{% This command makes the farmer graphics. It automatically adapts the number of farmers
+
+
     \pgfmathsetmacro\r{\i*(360/\n)}
     \node[align=center][xshift=\j*\wid*2cm] (farmpic_\i_\j) at (\r:1) {\includegraphics[width=.8cm]{\myfarmer}};
+
+
+
 }
 
 \newcommand{\greencircle}{%This command creates the green circles, relative to the first figure
@@ -119,7 +100,9 @@ indpayoff
 
 %%%% Begin with main command
 
-\newcommand{\moreplayers}[1]{% This is the main command. Options should be allowed
+
+
+\newcommand{\moreplayers}{% This is the main command. Options should be allowed
 
 
 
@@ -136,7 +119,7 @@ indpayoff
     \foreach \j/\t in {0/\ta,1/\tb,2/\tc,3/\td} {% 
         \pgfmathsetmacro\dist{(\j*\wid+1.7)}%defines a macro /dist that calculates the distance between the steps
         \ifthenelse{\j<3}{\draw (\dist,-2) -- (\dist,2.9);}{}%draw vertical lines
-        \draw[white](\j*\wid,0) circle (\c) \text{\t}  ;
+        \draw[white, opacity=1](\j*\wid,0) circle (\c) \text{\t}  ;
         \ifthenelse{\j>0}%do not draw the circle in first step 
             {\greencircle}
             {} %else dont draw circle 
@@ -145,11 +128,11 @@ indpayoff
        
     
          \ifthenelse{\j=1}    
-            {\node[align = center]  (outcomes) at  (\j*\wid,0) {\cur\textcolor{blue}{\totalcontr} };}{}    
+            {\node[align = center]  (outcomes) at  (\j*\wid,0) {\textcolor{blue}{\totalcontr} \cur };}{}    
         \ifthenelse{\j=2}    
-            {\node[align = center]  (outcomes2) at  (\j*\wid,0) {\cur\textcolor{blue}{\totalcontr}\\ $\downarrow$ \\ \cur\textcolor{blue}{\double}};}{}
+            {\node[align = center]  (outcomes2) at  (\j*\wid,0) {\textcolor{blue}{\totalcontr} \cur\\ $\downarrow$ \\ \textcolor{blue}{\double} \cur};}{}
         \ifthenelse{\j=3}    
-            {\node[align = center]  (outcomes3) at  (\j*\wid,0) {\cur\textcolor{blue}{\double} };}{}
+            {\node[align = center]  (outcomes3) at  (\j*\wid,0) {\textcolor{blue}{\double} \cur };}{}
        
             
             
@@ -161,30 +144,30 @@ indpayoff
         %//j=0 is the first step. Here, we define the payment display. 
           
            
-          \ifthenelse{\j=1 \AND \GetListMember*{\x}{\i}>0}{ \draw [->] (farmpic_\i_\j) -- (outcomes);}{}  
+          \ifthenelse{\j=1 \AND \GetListMember*{\ifcont}{\i}>0}{ \draw [->] (farmpic_\i_\j) -- (outcomes);}{}  
             
            \ifthenelse{\j=3}{ \draw [<-] (farmpic_\i_\j) -- (outcomes3);}{} 
            
            
             \ifthenelse{\i<\nhalf \AND \j=0}%defines position of money over each farmer. Can be below or above
-                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{red}{\GetListMember*{\equ}{\i}} };}{}%those are the farmers who get the money above their heads
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\textcolor{red}{\GetListMember*{\equ}{\i}} \cur };}{}%those are the farmers who get the money above their heads
                 
                             \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=0}
-                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{red}{\GetListMember*{\equ}{\i}}  };}{}%those are the farmers who get the money below their heads
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\textcolor{red}{\GetListMember*{\equ}{\i}} \cur  };}{}%those are the farmers who get the money below their heads
                 
 
             
             \ifthenelse{\i<\nhalf \AND \j=1}%defines position of money over each farmer. Can be below or above
-                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{blue}{\GetListMember*{\x}{\i}} };}{}%those are the farmers who get the money above their heads
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\textcolor{blue}{\GetListMember*{\x}{\i}} \cur };}{}%those are the farmers who get the money above their heads
             \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=1}
-                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{blue}{\GetListMember*{\x}{\i}}  };}{}%those are the farmers who get the money below their heads
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\textcolor{blue}{\GetListMember*{\x}{\i}} \cur };}{}%those are the farmers who get the money below their heads
        
             
            
             \ifthenelse{\i<\nhalf \AND \j=3}%defines position of money over each farmer. Can be below or above
-                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\cur\textcolor{blue}{\GetListMember*{\indpayoff}{\i}} \\ \cur\textcolor{red}{\GetListMember*{\y}{\i}} };}{}%those are the farmers who get the money above their heads
+                {\node[align=center][above= of farmpic_\i_\j , yshift=-1cm] {\textcolor{blue}{\GetListMember*{\indpayoff}{\i} \cur} \\ \textcolor{red}{\GetListMember*{\y}{\i}} \cur };}{}%those are the farmers who get the money above their heads
             \ifthenelse{\i > \nhalf \OR \i = \nhalf  \AND \j=3}
-                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\cur\textcolor{blue}{\GetListMember*{\indpayoff}{\i}} \\ \cur\textcolor{red}{\GetListMember*{\y}{\i}}  };}{}%those are the farmers who get the money below their heads           
+                {\node[align=center][below= of farmpic_\i_\j , yshift=1cm] {\textcolor{blue}{\GetListMember*{\indpayoff}{\i} \cur} \\ \textcolor{red}{\GetListMember*{\y}{\i}} \cur  };}{}%those are the farmers who get the money below their heads           
 
 
 
@@ -206,19 +189,30 @@ indpayoff
 
 \begin{document}
 
-\begin{minipage}{30cm}
+
+\sbox0{%this is only done to adjust the page width automatically
+
+
+\moreplayers
+
+
+}
+
+
+\begin{minipage}{\wd0}
+\usebox0
 %\maketitle
 
+% \equ
+% \indpayoff
 
 
 
-\moreplayers
 
 
-
-\moreplayers
 
 \end{minipage}
+
 
 
 
